@@ -1,0 +1,96 @@
+coredump2packages(1)
+====================
+
+NAME
+----
+coredump2packages - Extract package information from a coredump.
+
+SYNOPSIS
+--------
+'coredump2packages' COREDUMP [--repos WILDCARD...] [--log FILENAME] [--fields FIELD...]
+
+DESCRIPTION
+-----------
+This tool matches a coredump to packages from the provided repositories.
+
+OPTIONS
+-------
+
+--repos WILDCARD...::
+  Names of repositories that should be searched. Multiple wildcards or
+  repository names can be specified. Default value is '*' (search all
+  repositories, including the disabled).
+
+--log FILENAME::
+  Store debugging information to a specified file. When 'stdout' or
+  'stderr' is provided as FILENAME, the debugging output is redirected
+  to standard (erorr) output.
+
+--md-cache-dir DIR::
+  Directory to store repository metadata cache, which speeds up
+  repository metadata initialization. If the provided directory does
+  not exist, it is created.
+
+--fields FIELD...::
+  Specifies the output of the tool. The order of provided fields is
+  used for coredump2packages output. The fields are separated by an
+  empty line in the output. An empty field output is indicated by a
+  single line containing the '-' character. Default value is
+  'installable_packages'.
+
+Fields
+~~~~~~
+
+'packages'::
+  Prints all packages (name-version-release) that are possiby
+  referenced from the coredump. The list includes multiple versions of
+  debuginfo packages if they matches a build_id and multiple versions
+  of binary packages that correspond to debuginfo packages.
+
+'components'::
+  Prints all components that are possibly referenced from the
+  coredump.
+
+'program_packages'::
+  Prints a list of packages that contain the binary referenced by the
+  coredump with the matching build_id.
+
+'program_components'::
+  Prints a list of components which package contains the binary
+  referenced by the coredump via build_id.
+
+'installable_packages'::
+  Prints a list of packages that are referenced from the coredump and
+  that are installable. This means there are no conflicts between them
+  or their dependencies.
+
+'installable_components'::
+  Prints a list of components covering the installable packages.
+
+'installable_program_package'::
+  Prints a package containing the binary referenced from the coredump.
+
+'installable_program_component'::
+  Prints a component that contains the binary referenced from the
+  coredump.
+
+'full_installable_packages'::
+  Prints an installable full set of packages that can be used to setup
+  an environment for coredump analysis via chroot GDB.
+
+'missing_build_ids'::
+  Prints a list of build ids from the coredump without corresponding
+  debuginfo package found in provided repositories. Every line
+  contains a build id and a path to binary.
+
+'missing_packages'::
+  Prints a list of debuginfo packages that were referenced from the
+  coredump, but no binary was found in corresponding binary packages.
+  In other words, the debugging symbols are available, but the binary
+  is not. Every line contains a debuginfo package name-version-release
+  and a path to binary that was not found in packages.
+
+AUTHORS
+-------
+* Karel Klic
+

@@ -3,7 +3,8 @@ SUBDIRS = config gpg lib plugins
 MAN_TXT = \
     retrace-server-cleanup.txt \
     retrace-server-reposync.txt \
-    retrace-server-worker.txt
+    retrace-server-worker.txt \
+    coredump2packages.txt
 
 #Manual pages are generated from .txt via Docbook
 man1_MANS = ${MAN_TXT:%.txt=%.1}
