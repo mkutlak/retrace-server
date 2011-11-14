@@ -24,6 +24,7 @@ import fnmatch
 import urllib2
 import functools
 import itertools
+import time
 
 class GenericRepo(dict):
     def __init__(self, name, type, md_cache_dir, attribs = {}):
@@ -448,6 +449,9 @@ elif cmdline_args.log is not None:
 else:
     log = open("/dev/null", "w")
 
+# Timing
+metadata_time = time.time()
+
 # Create solver package pool.
 pool = solv.Pool()
 pool.setarch(os.uname()[4])
@@ -490,6 +494,10 @@ if addedprovides:
     for repo in repos:
         repo.update_added_provides(addedprovides)
 pool.createwhatprovides()
+
+# Timing
+metadata_time = time.time() - metadata_time
+unstrip_time = time.time()
 
 # Get eu-unstrip output, which contains build-ids and binary object
 # paths
@@ -630,6 +638,10 @@ for line in unstrip.split('\n'):
     if unstrip_output.program_entry_line is None:
         unstrip_output.program_entry_line = unstrip_output.lines[-1]
 
+# Timing
+unstrip_time = time.time() - unstrip_time
+debuginfo_search_time = time.time()
+
 # Find debuginfo packages corresponding to every build id. Create a
 # new structure for this. Debuginfo_package is a structure with epoch,
 # ver, rel, and arch attributes.
@@ -651,6 +663,10 @@ for line in unstrip_output.lines:
             count,
             "s" if count != 1 else "",
             ": {0}".format(", ".join(formatted_packages)) if count > 0 else ""))
+
+# Timing
+debuginfo_search_time = time.time() - debuginfo_search_time
+binary_search_time = time.time()
 
 # For every debuginfo package, find associated binary packages that
 # might contain the binary (specified either by a path or build id if
@@ -732,6 +748,11 @@ for line in unstrip_output.lines:
                     continue
                 log.write(": EVR and base package name matches\n")
                 line.debuginfo_packages[debuginfo_package].append(binobj_package)
+
+
+# Timing
+binary_search_time = time.time() - binary_search_time
+resolv_time = time.time()
 
 def limit_jobs(pool, jobs, flags, evrstr):
     njobs = []
@@ -827,6 +848,10 @@ for variant in itertools.product(*unstrip_output.install_variants_list):
         log.write("  - current best variant has {0} packages, maximum is {1}\n".format(
                 best_installable_variant_len, max_len))
 
+# Timing
+resolv_time = time.time() - resolv_time
+print_time = time.time()
+
 def to_components(packages):
     return set([package.source_name() for package in packages])
 
@@ -870,3 +895,26 @@ for field in cmdline_args.fields:
     else:
         sys.exit("Unknown field '{0}'.".format(field))
 sys.stdout.write("\n".join(output))
+
+# Timing
+print_time = time.time() - print_time
+
+def time_to_str(seconds, total = None):
+    m = seconds // 60
+    s = seconds % 60
+    result = "{0:.2f}s".format(s)
+    if m > 0:
+        result = "{0}m{1:.2f}s".format(int(m), s)
+    if total is not None:
+        result += " {0:.2f}%".format((seconds / total) * 100.0)
+    return result
+
+log.write("Timing:\n")
+total = metadata_time + unstrip_time + debuginfo_search_time + binary_search_time + resolv_time + print_time
+log.write(" - metadata: {0}\n".format(time_to_str(metadata_time, total)))
+log.write(" - unstrip: {0}\n".format(time_to_str(unstrip_time, total)))
+log.write(" - debuginfo_search: {0}\n".format(time_to_str(debuginfo_search_time, total)))
+log.write(" - binary_search: {0}\n".format(time_to_str(binary_search_time, total)))
+log.write(" - resolv: {0}\n".format(time_to_str(resolv_time, total)))
+log.write(" - printing: {0}\n".format(time_to_str(print_time, total)))
+log.write(" TOTAL: {0}\n".format(time_to_str(total)))
