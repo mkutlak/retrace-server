@@ -1,6 +1,6 @@
 AC_INIT([retrace-server],
-	m4_esyscmd([cat ./retrace-server-version]),
-	[crash-catcher@fedorahosted.org])
+        [m4_esyscmd(cat ./retrace-server-version)],
+        [crash-catcher@fedorahosted.org])
 
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall foreign silent-rules])
@@ -16,8 +16,8 @@ CFLAGS="$CFLAGS -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE \
           -D_FILE_OFFSET_BITS=64 -fno-strict-aliasing -std=gnu99 -Wall"
 
 AC_ARG_ENABLE(debug,
-              [AC_HELP_STRING([--enable-debug],
-                             [Enable debug information])],
+              [AS_HELP_STRING([--enable-debug],
+                              [Enable debug information])],
               [CFLAGS="$CFLAGS -DDEBUG -ggdb -g"])
 
 dnl ****** INTERNATIONALIZATION **********************
