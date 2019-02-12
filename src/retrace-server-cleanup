@@ -44,7 +44,7 @@ def check_open_crash_file(task):
     else:
         return False
 
-    lsof = Popen(["lsof", "+wt", crash_path], stdout=PIPE, encoding='utf-8')
+    lsof = Popen([LSOF_BIN, "+wt", crash_path], stdout=PIPE, encoding='utf-8')
     try:
         pids = lsof.communicate(timeout=10)[0]
     except TimeoutExpired:
