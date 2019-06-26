@@ -528,7 +528,7 @@ class RetraceWorker(object):
 
         task.set_backtrace(backtrace)
         if exploitable is not None:
-            task.add_misc("exploitable", exploitable)
+            task.add_misc("exploitable", exploitable, mode="w")
 
         self.hook_post_retrace()
 
@@ -645,20 +645,16 @@ class RetraceWorker(object):
         cmd_output = None
         returncode = 0
         try:
-            child = Popen(crash_start, stdin=PIPE, stdout=PIPE, stderr=STDOUT, encoding='utf-8')
+            child = Popen(crash_start, stdin=PIPE, stdout=PIPE, stderr=STDOUT)
             cmd_output = child.communicate(crash_cmdline)[0]
         except OSError as err:
             log_warn("crash command: '%s' triggered OSError " %
                      crash_cmdline.replace('\r', '; ').replace('\n', '; '))
             log_warn("  %s" % err)
-        except UnicodeDecodeError as err:
-            log_warn("crash command: '%s' triggered UnicodeDecodeError " %
-                     crash_cmdline.replace('\r', '; ').replace('\n', '; '))
-            log_warn("  %s" % err)
-        except:
+        except Exception as ex:
             log_warn("crash command: '%s' triggered Unknown exception %s" %
                      crash_cmdline.replace('\r', '; ').replace('\n', '; '))
-            log_warn("  %s" % sys.exc_info()[0])
+            log_warn("  %s" % ex)
 
         if child.wait():
             log_warn("crash '%s' exitted with %d" % (crash_cmdline.replace('\r', '; ').replace('\n', '; '),
@@ -839,7 +835,7 @@ class RetraceWorker(object):
         crash_foreach_bt, ret = self.run_crash_cmdline(crash_normal,
                                                       "set hex\nforeach bt\nquit\n")
 
-        task.set_backtrace(kernellog)
+        task.set_backtrace(kernellog, mode="wb")
         # If crash sys command exited with non-zero status, we likely have a semi-useful vmcore
         if not crash_sys_c:
             # FIXME: Probably a better hueristic can be done here
