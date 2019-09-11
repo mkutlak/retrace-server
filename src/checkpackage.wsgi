@@ -1,6 +1,11 @@
 #!/usr/bin/python3
+from webob import Request
 
-from retrace import *
+from retrace.retrace import (parse_http_gettext, response, is_package_known
+                             INPUT_PACKAGE_PARSER, INPUT_ARCH_PARSER,
+                             INPUT_RELEASEID_PARSER)
+from retrace.config import Config
+
 
 def application(environ, start_response):
     request = Request(environ)

@@ -1,9 +1,17 @@
 #!/usr/bin/python3
+import os
+import sys
 
-from tempfile import *
-from retrace import *
+from webob import Request
 
-CONFIG = config.Config()
+from retrace.retrace import (parse_http_gettext, response, get_active_tasks,
+                             save_crashstats_reportfull, HANDLE_ARCHIVE, free_space,
+                             get_archive_type, unpacked_size, ALLOWED_FILES,
+                             TASK_RETRACE, TASK_TYPES, TASK_RETRACE_INTERACTIVE,
+                             TASK_VMCORE_INTERACTIVE, REQUIRED_FILES, TASK_VMCORE)
+from retrace.config import Config
+
+CONFIG = Config()
 BUFSIZE = 1 << 20 # 1 MB
 
 def application(environ, start_response):

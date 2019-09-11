@@ -1,9 +1,12 @@
 #!/usr/bin/python3
 
 from six.moves import urllib
-from retrace import *
+from webob import Request
 
-CONFIG = config.Config()
+from retrace.retrace import parse_http_gettext, response, URL_PARSER
+from retrace.config import Config
+
+CONFIG = Config()
 
 def application(environ, start_response):
     request = Request(environ)
