@@ -13,17 +13,16 @@ import sqlite3
 import stat
 import time
 import hashlib
-from signal import *
-from subprocess import *
+from signal import getsignal, signal, SIG_DFL, SIGPIPE
+from subprocess import Popen, PIPE, STDOUT, call
 import magic
 import six
+
 from dnf.subject import Subject
-from  hawkey import FORM_NEVRA
+from hawkey import FORM_NEVRA
 from six.moves import range, urllib
-from webob import Request
-from .argparser import *
-from .config import *
-from .plugins import *
+
+from .config import DF_BIN, DU_BIN, GZIP_BIN, TAR_BIN, XZ_BIN, Config
 
 GETTEXT_DOMAIN = "retrace-server"
 
