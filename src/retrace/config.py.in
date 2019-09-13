@@ -11,12 +11,7 @@
 import os
 import sys
 
-if sys.version_info.major == 2:
-#Python 2
-    import ConfigParser as configparser # pylint: disable=import-error
-else:
-#Python 3+
-    import configparser
+import configparser
 
 DF_BIN = "@DF_BIN@"
 DU_BIN = "@DU_BIN@"
@@ -154,5 +149,5 @@ class Config(object):
     def __getattr__(self, name):
         return getattr(self.instance, name)
 
-    def __setattr__(self, name):
+    def __setattr__(self, name, _):
         pass
