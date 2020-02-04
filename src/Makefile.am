@@ -1,4 +1,10 @@
-SUBDIRS = config gpg retrace plugins template
+SUBDIRS = \
+    config \
+    gpg \
+    plugins \
+    retrace \
+    static \
+    template
 
 MAN_TXT = \
     retrace-server-cleanup.txt \
