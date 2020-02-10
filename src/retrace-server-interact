@@ -146,30 +146,23 @@ if __name__ == "__main__":
                                     "Try restarting or resubmitting the task.\n" %
                                     task.get_taskid())
 
-            if not task.has_mock():
-                if task.has_crashrc():
-                    cmdline = task.get_crash_cmd().split() + ["-i", task.get_crashrc_path(), vmcore_path, vmlinux]
-                else:
-                    cmdline = task.get_crash_cmd().split() + [vmcore_path, vmlinux]
+            cfgdir = os.path.join(CONFIG["SaveDir"], "%d-kernel" % task.get_taskid())
+            if task.has_crashrc():
+                cmdline = ["/usr/bin/mock", "--configdir", cfgdir,
+                           "shell", "crash -i %s %s %s" % (task.get_crashrc_path(), vmcore_path, vmlinux)]
             else:
-                cfgdir = os.path.join(CONFIG["SaveDir"], "%d-kernel" % task.get_taskid())
-                if task.has_crashrc():
-                    cmdline = ["/usr/bin/mock", "--configdir", cfgdir,
-                               "shell", "crash -i %s %s %s" % (task.get_crashrc_path(), vmcore_path, vmlinux)]
-                else:
-                    cmdline = ["/usr/bin/mock", "--configdir", cfgdir,
-                               "shell", "crash %s %s" % (vmcore_path, vmlinux)]
+                cmdline = ["/usr/bin/mock", "--configdir", cfgdir,
+                           "shell", "crash %s %s" % (vmcore_path, vmlinux)]
 
             print_cmdline(cmdline)
             os.execvp(cmdline[0], cmdline)
 
         if args.action == "shell":
-            if task.has_mock():
-                cmdline = ["/usr/bin/mock", "--configdir",
-                           os.path.join(CONFIG["SaveDir"], "%d-kernel" % task.get_taskid()), "shell"]
+            cmdline = ["/usr/bin/mock", "--configdir",
+                       os.path.join(CONFIG["SaveDir"], "%d-kernel" % task.get_taskid()), "shell"]
 
-                print_cmdline(cmdline)
-                os.execvp(cmdline[0], cmdline)
+            print_cmdline(cmdline)
+            os.execvp(cmdline[0], cmdline)
 
             sys.stderr.write("The task does not require a chroot. You can use the current shell.\n")
             sys.exit(1)

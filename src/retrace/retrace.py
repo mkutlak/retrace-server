@@ -1675,16 +1675,6 @@ class RetraceTask:
             if not os.path.isdir(self._savedir):
                 raise Exception("The task %d does not exist" % self._taskid)
 
-    def set_mock(self, value):
-        self._mock = value
-
-    def get_mock(self):
-        return self._mock
-
-    def has_mock(self):
-        """Verifies whether MOCK_SITE_DEFAULTS_CFG is present in the task directory."""
-        return self.has(RetraceTask.MOCK_SITE_DEFAULTS_CFG)
-
     def _get_file_path(self, key):
         key_sanitized = key.replace("/", "_").replace(" ", "_")
         return os.path.join(self._savedir, key_sanitized)
@@ -1956,16 +1946,7 @@ class RetraceTask:
         self.set_atomic(RetraceTask.KERNELVER_FILE, str(value))
         # Only use mock if we're cross arch, and there's no arch-specific crash available
         # Set crash_cmd based on arch and any config setting
-        hostarch = get_canon_arch(os.uname()[4])
-        if value.arch == hostarch:
-            self.set_crash_cmd("crash")
-            self.set_mock(False)
-        elif CONFIG["Crash%s" % value.arch] and os.path.isfile(CONFIG["Crash%s" % value.arch]):
-            self.set_mock(False)
-            self.set_crash_cmd(CONFIG["Crash%s" % value.arch])
-        else:
-            self.set_mock(True)
-            self.set_crash_cmd("crash")
+        self.set_crash_cmd("crash")
 
     def has_notes(self):
         return self.has(RetraceTask.NOTES_FILE)
