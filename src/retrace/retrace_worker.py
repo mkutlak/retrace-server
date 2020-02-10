@@ -14,7 +14,7 @@ from .retrace import (ALLOWED_FILES, INPUT_PACKAGE_PARSER, REPO_PREFIX, REQUIRED
                       STATUS, STATUS_ANALYZE, STATUS_BACKTRACE, STATUS_CLEANUP,
                       STATUS_FAIL, STATUS_INIT, STATUS_STATS, STATUS_SUCCESS,
                       TASK_DEBUG, TASK_RETRACE, TASK_RETRACE_INTERACTIVE, TASK_VMCORE,
-                      TASK_VMCORE_INTERACTIVE,
+                      TASK_VMCORE_INTERACTIVE, MOCK_BIN, PODMAN_BIN,
                       get_active_tasks,
                       get_supported_releases,
                       guess_arch,
@@ -450,14 +450,14 @@ class RetraceWorker():
         log_info(STATUS[STATUS_INIT])
 
         if CONFIG["RetraceEnvironment"] == "mock":
-            self._retrace_run(25, ["/usr/bin/mock", "init", "--resultdir",
+            self._retrace_run(25, [MOCK_BIN, "init", "--resultdir",
                                    task.get_savedir() + "/log", "--configdir",
                                    task.get_savedir()])
 
             self.hook.run("post_prepare_environment")
             self.hook.run("pre_retrace")
 
-            self._retrace_run(27, ["/usr/bin/mock", "--configdir", task.get_savedir(), "shell",
+            self._retrace_run(27, [MOCK_BIN, "--configdir", task.get_savedir(), "shell",
                                    "--", "chgrp -R mock /var/spool/abrt/crash"])
 
         # generate backtrace
@@ -720,7 +720,7 @@ class RetraceWorker():
                 finally:
                     os.umask(old_umask)
 
-                child = run(["/usr/bin/mock", "--configdir", cfgdir, "init"],
+                child = run([MOCK_BIN, "--configdir", cfgdir, "init"],
                             stdout=PIPE, stderr=PIPE, encoding='utf-8')
                 stderr = child.stderr
                 if child.returncode:
@@ -737,9 +737,9 @@ class RetraceWorker():
                     raise Exception("prepare_debuginfo failed: %s" % str(ex))
 
                 self.hook.run("pre_retrace")
-                crash_normal = ["/usr/bin/mock", "--configdir", cfgdir, "shell", "--",
+                crash_normal = [MOCK_BIN, "--configdir", cfgdir, "shell", "--",
                                 task.get_crash_cmd() + " -s %s %s" % (vmcore_path, vmlinux)]
-                crash_minimal = ["/usr/bin/mock", "--configdir", cfgdir, "shell", "--",
+                crash_minimal = [MOCK_BIN, "--configdir", cfgdir, "shell", "--",
                                  task.get_crash_cmd() + " -s --minimal %s %s" % (vmcore_path, vmlinux)]
 
             elif CONFIG["RetraceEnvironment"] == "podman":
@@ -774,7 +774,7 @@ class RetraceWorker():
 
                 img_cont_id = str(task.get_taskid())
 
-                child = run(["/usr/bin/podman",
+                child = run([PODMAN_BIN,
                              "build",
                              "--file",
                              os.path.join(savedir, RetraceTask.DOCKERFILE),
@@ -785,17 +785,17 @@ class RetraceWorker():
                     raise Exception("Unable to build podman container")
 
                 vmlinux = vmcore.prepare_debuginfo(task, kernelver=kernelver)
-                child = run(["/usr/bin/podman", "run", "--detach", "-it", "--rm",
+                child = run([PODMAN_BIN, "run", "--detach", "-it", "--rm",
                              "retrace-image:%s" % img_cont_id],
                             stdout=PIPE, stderr=PIPE, encoding='utf-8')
                 if child.stderr:
                     log_error(child.stderr)
                     raise Exception("Unable to run podman container")
 
-                crash_normal = ["/usr/bin/podman", "exec", img_cont_id,
+                crash_normal = [PODMAN_BIN, "exec", img_cont_id,
                                 task.get_crash_cmd()
                                 + " -s /var/spool/abrt/crash/vmcore %s" % vmlinux]
-                crash_minimal = ["/usr/bin/podman", "exec", img_cont_id,
+                crash_minimal = [PODMAN_BIN, "exec", img_cont_id,
                                  task.get_crash_cmd()
                                  + " -s --minimal /var/spool/abrt/crash/vmcore %s" % vmlinux]
 

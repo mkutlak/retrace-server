@@ -38,6 +38,9 @@ ALLOWED_FILES = {
     "vmcore": 0,
 }
 
+MOCK_BIN = "/usr/bin/mock"
+PODMAN_BIN = "/usr/bin/podman"
+
 TASK_RETRACE, TASK_DEBUG, TASK_VMCORE, TASK_RETRACE_INTERACTIVE, \
   TASK_VMCORE_INTERACTIVE = range(5)
 
@@ -345,12 +348,12 @@ def run_gdb(savedir, plugin, repopath, taskid=None):
         raise Exception("Executable contains forbidden characters")
 
     if CONFIG["RetraceEnvironment"] == "mock":
-        output = run(["/usr/bin/mock", "shell", "--configdir", savedir,
+        output = run([MOCK_BIN, "shell", "--configdir", savedir,
                       "--", "ls '%s'" % executable], stdout=PIPE, stderr=DEVNULL, encoding='utf-8').stdout
         if output.strip() != executable:
             raise Exception("The appropriate package set could not be installed")
 
-        child = run(["/usr/bin/mock", "shell", "--configdir", savedir,
+        child = run([MOCK_BIN, "shell", "--configdir", savedir,
                      "--", "/bin/chmod a+r '%s'" % executable])
         if child.returncode:
             raise Exception("Unable to chmod the executable")
@@ -378,23 +381,23 @@ def run_gdb(savedir, plugin, repopath, taskid=None):
                          PYTHON_LABEL_END, EXPLOITABLE_SEPARATOR))
 
     if CONFIG["RetraceEnvironment"] == "mock":
-        child = run(["/usr/bin/mock", "--configdir", savedir, "--copyin",
+        child = run([MOCK_BIN, "--configdir", savedir, "--copyin",
                      batfile, "/var/spool/abrt/gdb.sh"], stdout=DEVNULL, stderr=DEVNULL)
         if child.returncode:
             raise Exception("Unable to copy GDB launcher into chroot")
 
-        child = run(["/usr/bin/mock", "--configdir", savedir, "shell",
+        child = run([MOCK_BIN, "--configdir", savedir, "shell",
                      "--", "/bin/chmod a+rx /var/spool/abrt/gdb.sh"], stdout=DEVNULL, stderr=DEVNULL)
         if child.returncode:
             raise Exception("Unable to chmod GDB launcher")
 
-        child = run(["/usr/bin/mock", "shell", "--configdir", savedir,
+        child = run([MOCK_BIN, "shell", "--configdir", savedir,
                      "--", "su mockbuild -c '/bin/sh /var/spool/abrt/gdb.sh'",
                      # redirect GDB's stderr, ignore mock's stderr
                      "2>&1"], stdout=PIPE, stderr=DEVNULL, encoding='utf-8')
 
     elif CONFIG["RetraceEnvironment"] == "podman":
-        podman_build_call = ["/usr/bin/podman", "build", "--file",
+        podman_build_call = [PODMAN_BIN, "build", "--file",
                              os.path.join(savedir, RetraceTask.DOCKERFILE),
                              "--volume=%s:%s:ro" % (repopath, repopath)]
         if CONFIG["UseFafPackages"]:
@@ -410,7 +413,7 @@ def run_gdb(savedir, plugin, repopath, taskid=None):
         if child.returncode:
             raise Exception("Unable to build podman container")
 
-        child = run(["/usr/bin/podman", "run", "-it", "--name=%s" % img_cont_id,
+        child = run([PODMAN_BIN, "run", "-it", "--name=%s" % img_cont_id,
                      "--rm", "retrace-image:%s" % img_cont_id], stdout=PIPE, encoding='utf-8')
     else:
         raise Exception("RetraceEnvironment set to invalid value")
@@ -1552,7 +1555,7 @@ class KernelVMcore:
 
         # Obtain the list of modules this vmcore requires
         if chroot:
-            crash_normal = ["/usr/bin/mock", "--configdir", chroot, "shell",
+            crash_normal = [MOCK_BIN, "--configdir", chroot, "shell",
                             "--", "crash -s %s %s" % (self._vmcore_path, vmlinux)]
         else:
             crash_normal = crash_cmd + ["-s", self._vmcore_path, vmlinux]
@@ -2528,11 +2531,11 @@ class RetraceTask:
         if os.path.isfile(os.path.join(self._savedir, "default.cfg")) and \
            os.path.isfile(os.path.join(self._savedir, "site-defaults.cfg")) and \
            os.path.isfile(os.path.join(self._savedir, "logging.ini")):
-            run(["/usr/bin/mock", "--configdir", self._savedir, "--scrub=all"])
+            run([MOCK_BIN, "--configdir", self._savedir, "--scrub=all"])
 
         if CONFIG["RetraceEnvironment"] == "podman":
             img_cont_id = str(self._taskid)
-            run(["/usr/bin/podman", "rmi", "retrace-image:%s" % img_cont_id])
+            run([PODMAN_BIN, "rmi", "retrace-image:%s" % img_cont_id])
 
         for f in os.listdir(self._savedir):
             if f not in [RetraceTask.REMOTE_FILE, RetraceTask.CASENO_FILE,

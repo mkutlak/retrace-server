@@ -8,6 +8,7 @@ import time
 from subprocess import list2cmdline
 
 from retrace.retrace import (ALLOWED_FILES,
+                             MOCK_BIN,
                              STATUS_FAIL,
                              STATUS_SUCCESS,
                              TASK_RETRACE_INTERACTIVE,
@@ -94,7 +95,7 @@ if __name__ == "__main__":
 
     if task.get_type() == TASK_RETRACE_INTERACTIVE:
         if args.action == "shell":
-            cmdline = ["/usr/bin/mock", "--configdir", task.get_savedir(), "shell"]
+            cmdline = [MOCK_BIN, "--configdir", task.get_savedir(), "shell"]
             print_cmdline(cmdline)
             os.execvp(cmdline[0], cmdline)
         if args.action == "gdb":
@@ -104,7 +105,7 @@ if __name__ == "__main__":
                 sys.stderr.write("executable contains forbidden characters.\n")
                 sys.exit(1)
 
-            cmdline = ["/usr/bin/mock", "--configdir", task.get_savedir(), "shell",
+            cmdline = [MOCK_BIN, "--configdir", task.get_savedir(), "shell",
                        "gdb '%s' /var/spool/abrt/crash/coredump" % executable]
 
             print_cmdline(cmdline)
@@ -154,10 +155,10 @@ if __name__ == "__main__":
             else:
                 cfgdir = os.path.join(CONFIG["SaveDir"], "%d-kernel" % task.get_taskid())
                 if task.has_crashrc():
-                    cmdline = ["/usr/bin/mock", "--configdir", cfgdir,
+                    cmdline = [MOCK_BIN, "--configdir", cfgdir,
                                "shell", "crash -i %s %s %s" % (task.get_crashrc_path(), vmcore_path, vmlinux)]
                 else:
-                    cmdline = ["/usr/bin/mock", "--configdir", cfgdir,
+                    cmdline = [MOCK_BIN, "--configdir", cfgdir,
                                "shell", "crash %s %s" % (vmcore_path, vmlinux)]
 
             print_cmdline(cmdline)
@@ -165,7 +166,7 @@ if __name__ == "__main__":
 
         if args.action == "shell":
             if task.has_mock():
-                cmdline = ["/usr/bin/mock", "--configdir",
+                cmdline = [MOCK_BIN, "--configdir",
                            os.path.join(CONFIG["SaveDir"], "%d-kernel" % task.get_taskid()), "shell"]
 
                 print_cmdline(cmdline)
