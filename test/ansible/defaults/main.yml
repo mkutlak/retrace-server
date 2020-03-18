@@ -1,0 +1,62 @@
+---
+##############################################
+### retrace-server configuration for tests ###
+##############################################
+
+# Force to use HTTPS - only disable on trusted network
+rs_require_https: false
+
+# Allow interactive tasks (security risk, do not use on public systems)
+rs_allow_interactive: true
+
+# Allow to create tasks owned by task manager (security risk)
+rs_allow_task_manager: true
+
+# Verify GPG signatures of installed packages
+rs_require_gpg_check: false
+
+# Run the retrace in a Mock chroot (default), or a Podman container
+rs_retrace_environment: mock
+
+# EXPERIMENTAL! Use ABRT Server's storage to map build-ids
+# into debuginfo packages and resolve dependencies
+# Requires support from ABRT Server
+rs_use_faf_packages: false
+
+# Spool directory for FAF packages
+faf_spool_dir: /var/spool/faf
+
+##########################
+### Test configuration ###
+##########################
+
+# path to the local fedora repository for debuginfo and other packages
+fedora_repo: /var/tmp/local_fedora_repo
+
+# release version of packages that will be reposynced and retraced
+release: rawhide
+
+# extra packages that can be installed on the host
+# these packages are not meant to be retraced
+extra_packages:
+  - ""
+
+# Required packages for the tests
+required_packages:
+  - abrt-cli
+  - dnf-plugins-core
+  - httpd
+  - podman
+  - retrace-server
+  - will-crash
+
+# packages that are required for retracing tests
+reposync_packages:
+  - abrt-addon-ccpp
+  - cpio
+  - gdb
+  - glibc
+  - python3
+  - rpm
+  - shadow-utils
+  - will-crash

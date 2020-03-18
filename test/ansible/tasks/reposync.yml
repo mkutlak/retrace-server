@@ -1,0 +1,37 @@
+---
+- name: Create a directory for local repo
+  file:
+    path: "{{ fedora_repo }}"
+    state: directory
+    mode: 0644
+
+- name: Download packages for retracing
+  command: >
+    dnf install
+    --releasever={{ release }}
+    --downloadonly
+    --destdir={{ fedora_repo }}
+    --installroot={{ fedora_repo }}
+    {{ reposync_packages | join(" ") }}
+
+- name: Download debuginfo packages for retracing
+  command: >
+    dnf debuginfo-install
+    --releasever={{ release }}
+    --downloadonly
+    --destdir={{ fedora_repo }}
+    --installroot={{ fedora_repo }}
+    {{ reposync_packages | join(" ") }}
+
+- name: Run createrepo on Fedora repo
+  command: createrepo_c {{ fedora_repo }}
+
+- name: Replace Fedora repos for reposync
+  template:
+    src: retrace-plugins-fedora.py.j2
+    dest: /usr/share/retrace-server/plugins/fedora.py
+
+- name: Run retrace-server-reposync for local repository
+  command: retrace-server-reposync fedora {{ release }} x86_64
+  become: true
+  become_user: retrace

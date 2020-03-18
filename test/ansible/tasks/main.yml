@@ -1,0 +1,25 @@
+---
+
+- name: Start host setup stage
+  import_tasks: setup.yml
+  tags:
+    - check
+    - setup
+
+- name: Start retrace-server reposync stage
+  import_tasks: reposync.yml
+  tags:
+    - check
+    - reposync
+
+- name: Start retrace-server actions test stage
+  import_tasks: check_retrace.yml
+  tags:
+    - check
+    - check_retrace
+
+- name: Start retrace-server web test stage
+  import_tasks: check_web.yml
+  tags:
+    - check
+    - check_web

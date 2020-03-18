@@ -1,0 +1,15 @@
+---
+- name: Install the latest packages for the test
+  package:
+    name: {{ required_packages }}
+    state: latest
+
+- name: Install extra packages
+  package:
+    name: {{ extra_packages }}
+    state: present
+
+- name: Replace /etc/retrace-server/retrace-server.conf configuration
+  template:
+    src: retrace-server.conf.j2
+    dest: /etc/retrace-server/retrace-server.conf
