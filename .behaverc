@@ -1,0 +1,5 @@
+[behave]
+format=plain
+paths=tests/features
+outfiles=tests/behave_test_output
+show_timings=yes

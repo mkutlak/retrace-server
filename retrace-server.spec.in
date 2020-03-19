@@ -20,6 +20,8 @@ BuildRequires: asciidoc
 BuildRequires: xmlto
 BuildRequires: lsof
 BuildRequires: python3-devel
+BuildRequires: python3-behave
+BuildRequires: python3-selenium
 
 Requires: rsync
 Requires: mock >= 1.4.7
