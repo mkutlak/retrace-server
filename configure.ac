@@ -137,6 +137,7 @@ AC_CONFIG_FILES([
 	doc/Makefile
 	po/Makefile.in
 	src/Makefile
+	src/bin/Makefile
 	src/config/Makefile
 	src/config/hooks/Makefile
 	src/plugins/Makefile
