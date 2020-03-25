@@ -12,6 +12,7 @@ import rpm
 import dnf
 
 from functools import cmp_to_key
+from pathlib import Path
 from subprocess import run, DEVNULL, PIPE
 
 from retrace.retrace import (get_canon_arch,
@@ -46,16 +47,16 @@ def sync_using_dnf(targetid, repourl, globaldnfcfg="", localdnfcfg=""):
     dnftmp.write(localdnfcfg)
     dnftmp.close()
 
-    with open(dnftmp.name, "r") as f:
+    with Path(dnftmp.name).open("r") as f:
         log_debug("Using dnf config from %s\n%s" % (dnftmp.name, f.read()))
 
-    pkgdir = os.path.join(CONFIG["RepoDir"], targetid, "Packages")
-    tmpdir = os.path.join(CONFIG["RepoDir"], "temp", targetid)
-    if not os.path.isdir(tmpdir):
-        os.makedirs(tmpdir)
+    pkgdir = Path(CONFIG["RepoDir"], targetid, "Packages")
+    tmpdir = Path(CONFIG["RepoDir"], "temp", targetid)
+    if not tmpdir.is_dir():
+        tmpdir.mkdir(parents=True, exist_ok=True)
 
     try:
-        with open(os.path.join(CONFIG["LogDir"], "reposync_dnf.log"), "a") as dnflog:
+        with Path(CONFIG["LogDir"], "reposync_dnf.log").open("a") as dnflog:
             old_stderr = sys.stderr
             sys.stderr = dnflog
 
@@ -67,8 +68,8 @@ def sync_using_dnf(targetid, repourl, globaldnfcfg="", localdnfcfg=""):
                 log_error("Unable to initialize DNF cache")
                 return -1
 
-            cachedir = os.path.join(dnfbase.conf.cachedir, targetid)
-            if os.path.isdir(cachedir):
+            cachedir = Path(dnfbase.conf.cachedir, targetid)
+            if cachedir.is_dir():
                 shutil.rmtree(cachedir)
             dnfbase.read_all_repos()
 
@@ -91,16 +92,12 @@ def sync_using_dnf(targetid, repourl, globaldnfcfg="", localdnfcfg=""):
 
             for package in packages:
                 rpmname = package.location.rsplit("/", 1)[1]
-                pkgpath = os.path.join(pkgdir, rpmname)
+                pkgpath = Path(pkgdir, rpmname)
                 if not os.path.isfile(pkgpath) or os.path.getsize(pkgpath) != package.size:
                     log_info("%s will be downloaded" % rpmname)
                     download.append(package)
                 else:
                     log_debug("%s is already downloaded, skipping" % rpmname)
-
-
-
-
 
             errors = dnfbase.download_packages(download)
             for error in errors:
@@ -109,34 +106,35 @@ def sync_using_dnf(targetid, repourl, globaldnfcfg="", localdnfcfg=""):
             for package in download:
                 downloadpath = package.localPkg()
                 pkgname = os.path.basename(downloadpath)
-                targetpath = os.path.join(pkgdir, pkgname)
+                targetpath = Path(pkgdir, pkgname)
 
-                if not os.path.isfile(downloadpath):
+                if not Path(downloadpath).is_file():
                     # error message should be listed in errors
                     continue
 
-                if os.path.isfile(targetpath):
-                    os.unlink(targetpath)
+                if targetpath.is_file():
+                    targetpath.unlink()
 
                 try:
-                    os.rename(downloadpath, targetpath)
+                    downloadpath.rename(targetpath)
                 except OSError as ex:
                     if ex.errno != errno.EXDEV:
                         raise
 
                     shutil.copy2(downloadpath, targetpath)
-                    os.unlink(downloadpath)
+                    downloadpath.unlink()
             # END DNF
     finally:
         sys.stderr = old_stderr
         try:
-            os.unlink(dnftmp.name)
+            Path(dnftmp.name).unlink()
             shutil.rmtree(dnfbase.repos[targetid].cachedir)
         except Exception as ex:
             log_error("Unable to clean up: %s." % ex)
             return -1
 
     return retcode
+
 
 def vercmp(ver1, ver2):
     # ToDo: Involve epoch?
@@ -147,28 +145,29 @@ def vercmp(ver1, ver2):
 
     return rpm.labelCompare(first, second)
 
+
 def clean_rawhide_repo(release):
     packages = {}
-    pkgdir = os.path.join(CONFIG["RepoDir"], release, "Packages")
-    for f in os.listdir(pkgdir):
-        if not f.endswith(".rpm"):
+    pkgdir = Path(CONFIG["RepoDir"], release, "Packages")
+    for f in Path(pkgdir).iterdir():
+        if f.suffix != ".rpm":
             continue
 
-        pkgdata = parse_rpm_name(f)
+        pkgdata = parse_rpm_name(f.name)
         if not pkgdata["name"]:
             continue
 
         ver = "%s-%s" % (pkgdata["version"], pkgdata["release"])
 
         if not pkgdata["name"] in packages:
-            packages[pkgdata["name"]] = {ver: [f]}
+            packages[pkgdata["name"]] = {ver: [f.name]}
             continue
 
         if ver in packages[pkgdata["name"]]:
-            packages[pkgdata["name"]][ver].append(f)
+            packages[pkgdata["name"]][ver].append(f.name)
             continue
 
-        packages[pkgdata["name"]][ver] = [f]
+        packages[pkgdata["name"]][ver] = [f.name]
 
     for package in packages:
         pkgcnt = len(packages[package])
@@ -179,8 +178,9 @@ def clean_rawhide_repo(release):
                 for filename in packages[package][ver]:
                     if i < pkgcnt - CONFIG["KeepRawhideLatest"]:
                         log_info("Removing %s" % filename)
-                        os.unlink(os.path.join(pkgdir, filename))
+                        Path(pkgdir, filename).unlink()
                 i += 1
+
 
 if __name__ == "__main__":
     # parse arguments
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     if CONFIG["UseFafPackages"]:
         log_info("Creating repo from faf")
         targetid = "%s-%s-%s" % (distribution, version, arch)
-        targetdir = os.path.join(CONFIG["RepoDir"], targetid)
+        targetdir = Path(CONFIG["RepoDir"], targetid)
 
         if not os.path.isdir(targetdir):
             os.makedirs(targetdir)
@@ -259,15 +259,15 @@ if __name__ == "__main__":
         null = DEVNULL
 
     try:
-        targetdir = os.path.join(CONFIG["RepoDir"], targetid)
-        pkgdir = os.path.join(targetdir, "Packages")
+        targetdir = Path(CONFIG["RepoDir"], targetid)
+        pkgdir = Path(targetdir, "Packages")
 
         if not os.path.isdir(pkgdir):
             os.makedirs(pkgdir)
 
         for filename in os.listdir(targetdir):
             if filename.endswith(".rpm"):
-                os.rename(os.path.join(targetdir, filename), os.path.join(pkgdir, filename))
+                os.rename(Path(targetdir, filename), Path(pkgdir, filename))
 
         globaldnfcfg = ""
         if hasattr(plugin, "dnfcfg"):
@@ -301,7 +301,7 @@ if __name__ == "__main__":
                         files = []
                         try:
                             for package in os.listdir(repourl):
-                                files.append(os.path.join(repourl, package))
+                                files.append(Path(repourl, package))
                         except Exception as ex:
                             log_warn("Download failed: %s" % ex)
                             log_info("Trying another mirror")

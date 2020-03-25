@@ -4,6 +4,7 @@ import os
 import createrepo_c as cr
 import shutil
 from argparse import ArgumentParser
+from pathlib import Path
 from pyfaf.storage import getDatabase
 from pyfaf.queries import get_packages_by_osrelease
 
@@ -19,26 +20,26 @@ def get_pkglist(db, opsys, release, arch):
     for pkg in q:
         if pkg.has_lob("package"):
             print("Adding package: %s-%s-%s" % (pkg.name, pkg.build.version, pkg.build.release))
-            yield os.path.abspath(pkg.get_lob_path("package"))
+            yield Path.resolve(pkg.get_lob_path("package"))
 
 
 def generate_repo(db, outputdir, opsys, release, arch):
 
-    repodata_path = os.path.join(outputdir, "repodata")
+    repodata_path = Path(outputdir, "repodata")
 
-    if os.path.exists(repodata_path):
+    if repodata_path.exists():
         shutil.rmtree(repodata_path)
 
     os.makedirs(repodata_path)
 
     # Prepare metadata files
-    repomd_path = os.path.join(repodata_path, "repomd.xml")
-    pri_xml_path = os.path.join(repodata_path, "primary.xml.gz")
-    fil_xml_path = os.path.join(repodata_path, "filelists.xml.gz")
-    oth_xml_path = os.path.join(repodata_path, "other.xml.gz")
-    pri_db_path = os.path.join(repodata_path, "primary.sqlite")
-    fil_db_path = os.path.join(repodata_path, "filelists.sqlite")
-    oth_db_path = os.path.join(repodata_path, "other.sqlite")
+    repomd_path = Path(repodata_path, "repomd.xml")
+    pri_xml_path = Path(repodata_path, "primary.xml.gz")
+    fil_xml_path = Path(repodata_path, "filelists.xml.gz")
+    oth_xml_path = Path(repodata_path, "other.xml.gz")
+    pri_db_path = Path(repodata_path, "primary.sqlite")
+    fil_db_path = Path(repodata_path, "filelists.sqlite")
+    oth_db_path = Path(repodata_path, "other.sqlite")
 
     pri_xml = cr.PrimaryXmlFile(pri_xml_path)
     fil_xml = cr.FilelistsXmlFile(fil_xml_path)

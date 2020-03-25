@@ -4,6 +4,7 @@ import sys
 import re
 import time
 
+from pathlib import Path
 from subprocess import run, PIPE, STDOUT
 
 from retrace.retrace import (STATUS_FAIL,
@@ -51,9 +52,9 @@ def check_open_crash_file(task):
     Check if vmcore or coredump for given task is used by another process.
     """
     if task.has_vmcore():
-        crash_path = os.path.join(task.get_savedir(), task.VMCORE_FILE)
+        crash_path = Path(task.get_savedir(), task.VMCORE_FILE)
     elif task.has_coredump():
-        crash_path = os.path.join(task.get_savedir(), task.COREDUMP_FILE)
+        crash_path = Path(task.get_savedir(), task.COREDUMP_FILE)
     else:
         return False
 
@@ -93,7 +94,7 @@ def check_config():
 if __name__ == "__main__":
     check_config()
 
-    logfile = os.path.join(CONFIG["LogDir"], "cleanup.log")
+    logfile = Path(CONFIG["LogDir"], "cleanup.log")
 
     with open(logfile, "a") as log:
         log.write(time.strftime("[%Y-%m-%d %H:%M:%S] Running cleanup\n"))
@@ -152,9 +153,8 @@ if __name__ == "__main__":
         if CONFIG["ArchiveTaskAfter"] > 0:
             # archive old tasks
             try:
-                files = os.listdir(CONFIG["SaveDir"])
+                files = Path(CONFIG["SaveDir"]).iterdir()
             except OSError as ex:
-                files = []
                 log.write("Error listing task directory: %s\n" % ex)
 
             for filename in files:
@@ -165,11 +165,11 @@ if __name__ == "__main__":
 
                 if task.get_age() >= CONFIG["ArchiveTaskAfter"]:
                     log.write("Archiving task %s\n" % filename)
-                    if not os.path.isdir(CONFIG["DropDir"]):
-                        os.makedirs(CONFIG["DropDir"])
+                    if not Path(CONFIG["DropDir"]).isdir():
+                        Path(CONFIG["DropDir"]).mkdir(parents=True, exist_ok=True)
 
-                    targetfile = os.path.join(CONFIG["DropDir"],
-                                              "%s-%s.tar.gz" % (filename, time.strftime("%Y%m%d%H%M%S")))
+                    targetfile = Path(CONFIG["DropDir"],
+                                      "%s-%s.tar.gz" % (filename, time.strftime("%Y%m%d%H%M%S")))
 
                     child = run(["tar", "czf", targetfile, task.get_savedir()],
                                 stdout=PIPE, stderr=STDOUT)
@@ -177,7 +177,7 @@ if __name__ == "__main__":
                     if child.returncode:
                         log += "Error: tar exited with %d: %s\n" % (child.returncode, stdout)
                         try:
-                            os.unlink(targetfile)
+                            targetfile.unlink()
                         except OSError:
                             pass
 
@@ -188,9 +188,8 @@ if __name__ == "__main__":
         if CONFIG["DeleteTaskAfter"] > 0:
             # clean up old tasks
             try:
-                files = os.listdir(CONFIG["SaveDir"])
+                files = Path(CONFIG["SaveDir"]).iterdir()
             except OSError as ex:
-                files = []
                 log.write("Error listing task directory: %s\n" % ex)
 
             for filename in files:
@@ -210,9 +209,8 @@ if __name__ == "__main__":
         if CONFIG["DeleteFailedTaskAfter"] > 0:
             # clean up old failed tasks
             try:
-                files = os.listdir(CONFIG["SaveDir"])
+                files = Path(CONFIG["SaveDir"]).iterdir()
             except OSError as ex:
-                files = []
                 log.write("Error listing task directory: %s\n" % ex)
 
             for filename in files:
