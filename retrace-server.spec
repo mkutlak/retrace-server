@@ -1,6 +1,6 @@
 Summary: Application for remote coredump analysis
 Name: retrace-server
-Version: 1.21.0
+Version: 1.22.0
 Release: 1%{?dist}
 License: GPLv2+
 URL: https://github.com/abrt/retrace-server
@@ -203,3 +203,24 @@ exit 0
 %license COPYING
 
 %changelog
+* Tue Oct 20 2020 Matěj Grabovský <mgrabovs@redhat.com> 1.22.0-1
+- Add support for virtual memory files for vmcores
+- Add option to restart an existing task in retrace-server-task and on task manager page
+- Disallow users other than 'retrace' to call retrace-server-worker
+- Improve error message in case of Kerberos authentication failure
+- Revamp task manager web UI
+- Revamp GPG verification of package signatures; use keys from distribution-gpg-keys
+- Accommodate for multiple debug directories in Fedora 27 and later
+- Fix FTP submissions on task manager page
+- Fix permissions on dmesg file in task results directory
+- Add Meson support and Tito configuration
+- Update translations
+- Drop python3-six dependency
+- Add build dependencies on gzip, lsof, tar and xz
+- Rewrite Dockerfile
+- Migrate to calling subprocess.run() in place of s.Popen() and s.call()
+- Use pathlib.Path instead of strings and os.path methods in some places
+- Add kernel-only config options 'KernelDebuggerPath' and 'RetraceEnvironment=native'
+- Introduce type annotations
+- Address issues reported by Pylint
+- Other minor code refactoring and cleanup operations
