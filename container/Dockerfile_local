@@ -1,5 +1,5 @@
 FROM abrt/retrace-server-image
-ARG fedoraversion=32
+ARG fedoraversion=33
 
 USER root
 
