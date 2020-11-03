@@ -1,5 +1,4 @@
 FROM abrt/retrace-server-image
-MAINTAINER mmarusak@redhat.com
 ARG fedoraversion=32
 
 USER root
